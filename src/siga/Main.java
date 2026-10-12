@@ -15,7 +15,7 @@ import java.util.List;
 public class Main {
 
     public static void main(String[] args) {
-        System.out.println("=== SIGA - Atividade CRUD e Etapa 1 (código inicial) ===\n");
+        System.out.println("=== SIGA - Atividade CRUD e Etapa 1 (Código Refatorado) ===\n");
 
         AlunoDAO dao = new AlunoDAOMemoria();
         ServicoAluno servico = new ServicoAluno(dao);
@@ -31,45 +31,43 @@ public class Main {
             System.out.println("  " + aluno);
         }
 
-        // DESLIZE 1 em ação: a lista devolvida é a coleção INTERNA do DAO.
-        // A apresentação consegue alterar o armazém por fora, sem passar
-        // por nenhuma regra do serviço.
+        // Testando a correção do Deslize 1 (Cópia defensiva)
         List<Aluno> lista = servico.listar();
         lista.add(new Aluno("Intruso Silva", "9999999", 10));
-        System.out.println("\nApós a tela inserir um aluno DIRETAMENTE na lista:");
+        System.out.println("\nApós a tela tentar inserir um aluno DIRETAMENTE na lista:");
         for (Aluno aluno : servico.listar()) {
             System.out.println("  " + aluno);
         }
-        System.out.println("  (o 'Intruso' entrou sem passar pelo serviço)");
+        System.out.println("  (O 'Intruso' não entrou, pois a coleção está protegida pelo encapsulamento)");
 
-        // DESLIZE 2 em ação: exclusão de matrícula inexistente informa sucesso.
-        dao.remover("0000000");
-        System.out.println("\nExclusão de matrícula inexistente: 'removido com sucesso'");
-        System.out.println("  (mas nada foi removido — falha silenciosa)");
-
-        // DESLIZE 3 em ação: esta camada valida com limite diferente do serviço.
-        Aluno suspeito = new Aluno("Média Absurda", "2026003", 50);
-        if (suspeito.getMedia() >= 0 && suspeito.getMedia() <= 100) {   // limite divergente!
-            System.out.println("\nA tela aprovou média 50 (limite 0..100),");
-            try {
-                servico.cadastrar(suspeito);
-            } catch (IllegalArgumentException e) {
-                System.out.println("  mas o serviço recusou: " + e.getMessage());
-                System.out.println("  (a mesma regra mora em dois lugares, com limites diferentes)");
-            }
-        }
-
-        // --- UPDATE (ainda não implementado) ---
-        System.out.println();
+        // Testando a correção do Deslize 2 (Exclusão silenciosa impedida)
+        System.out.println("\nTentando excluir matrícula inexistente:");
         try {
-            dao.atualizar(new Aluno("Maria Silva", "2026001", 9.0));
-        } catch (UnsupportedOperationException e) {
-            System.out.println("Atualizar: " + e.getMessage());
+            servico.excluir("0000000");
+        } catch (IllegalArgumentException e) {
+            System.out.println("  Recusado: " + e.getMessage());
         }
 
-        System.out.println("\nSua tarefa: completar o CRUD, implementar a camada de serviço");
-        System.out.println("e corrigir os três deslizes (coleção exposta, exclusão silenciosa");
-        System.out.println("e validação duplicada). Depois, consolide a Etapa 1 no repositório.");
+        // Correção do Deslize 3: Validação divergente removida. 
+        // A tela agora apenas confia e repassa para o serviço.
+        Aluno suspeito = new Aluno("Média Absurda", "2026003", 50);
+        System.out.println("\nTentando cadastrar aluno com média 50:");
+        try {
+            servico.cadastrar(suspeito);
+        } catch (IllegalArgumentException e) {
+            System.out.println("  Recusado pelo serviço: " + e.getMessage());
+            System.out.println("  (A regra de validação agora mora em um único lugar)");
+        }
+
+        // --- UPDATE ---
+        System.out.println("\nTestando a atualização de um aluno:");
+        try {
+            servico.alterar(new Aluno("Maria Silva", "2026001", 9.5));
+            System.out.println("  Aluno 2026001 atualizado com sucesso.");
+            System.out.println("  Dados novos: " + servico.consultar("2026001"));
+        } catch (IllegalArgumentException e) {
+            System.out.println("  Falha ao atualizar: " + e.getMessage());
+        }
     }
 
     /** Apresentação: traduz as exceções do serviço em mensagens ao usuário. */
