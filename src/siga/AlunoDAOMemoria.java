@@ -30,7 +30,10 @@ public class AlunoDAOMemoria implements AlunoDAO {
 
     @Override
     public void inserir(Aluno aluno) {
-        // TODO (etapa 1): impedir matrícula duplicada, lançando IllegalStateException.
+        // Correção da Etapa 1: Impede matrícula duplicada
+        if (buscarPorMatricula(aluno.getMatricula()) != null) {
+            throw new IllegalStateException("Já existe um aluno com a matrícula " + aluno.getMatricula());
+        }
         armazem.add(aluno);
     }
 
@@ -46,21 +49,28 @@ public class AlunoDAOMemoria implements AlunoDAO {
 
     @Override
     public List<Aluno> listarTodos() {
-        // DESLIZE 1: devolve a própria coleção interna, sem cópia defensiva.
-        return armazem;
+        // Correção da Etapa 3: devolve uma cópia defensiva da coleção interna.
+        return new ArrayList<>(armazem);
     }
 
     @Override
     public void atualizar(Aluno aluno) {
-        // TODO (etapa 1): localizar o aluno pela matrícula e substituí-lo,
-        // lançando exceção caso não exista.
-        throw new UnsupportedOperationException("Operação ainda não implementada.");
+        // Correção da Etapa 1: Implementação da atualização com verificação
+        Aluno existente = buscarPorMatricula(aluno.getMatricula());
+        if (existente == null) {
+            throw new IllegalArgumentException("Aluno não encontrado para atualização.");
+        }
+        int index = armazem.indexOf(existente);
+        armazem.set(index, aluno);
     }
 
     @Override
     public void remover(String matricula) {
-        // DESLIZE 2: não verifica se existia; falha em silêncio.
+        // Correção do Deslize 2: Verificação de existência para evitar falha silenciosa
         Aluno encontrado = buscarPorMatricula(matricula);
-        armazem.remove(encontrado);   // remove(null) simplesmente não faz nada
+        if (encontrado == null) {
+            throw new IllegalArgumentException("Matrícula inexistente. Nenhum aluno foi removido.");
+        }
+        armazem.remove(encontrado);
     }
 }
