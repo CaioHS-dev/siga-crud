@@ -1,68 +1,35 @@
-# SIGA — Atividade de CRUD completo e Etapa 1 (código inicial)
+# Relatório de Correções do Projeto SIGA - Etapa 1
 
-**Técnicas de Programação II (TP2) · Aula 8** — CST em Desenvolvimento de Software Multiplataforma · Fatec de Porto Ferreira
 
-Este é o **código inicial** da atividade prática da Aula 8. O CRUD está **incompleto** e o código contém **três deslizes propositais**, que você deverá corrigir. Ao final, este projeto compõe a entrega da **Etapa 1 do Projeto Integrador**.
+## 1. Cadastro incompleto e repetição de alunos
+ 
+ * O sistema de armazenamento provisório (a classe `AlunoDAOMemoria`) estava incompleto. Ele permitia cadastrar dois alunos com o mesmo número de matrícula e não tinha o código necessário para atualizar as informações de um aluno já existente. Além disso, a classe de serviço, que faz o meio de campo com a tela, não tinha os comandos para consultar, alterar e excluir.
 
-## Estrutura do projeto
 
-```
-siga-crud/
-└── src/
-    └── siga/
-        ├── Aluno.java             (entidade de domínio; pronta)
-        ├── AlunoDAO.java          (interface do DAO, da Aula 7; pronta)
-        ├── AlunoDAOMemoria.java   (CRUD incompleto + deslizes 1 e 2)
-        ├── ServicoAluno.java      (camada de serviço incompleta + deslize 3)
-        └── Main.java              (apresentação; demonstra os deslizes)
-```
+* No armazenamento, criei uma verificação: antes de salvar um aluno novo, o sistema busca para ver se a matrícula já existe. Se existir, ele barra o cadastro.
+* Escrevi o código para a atualização: o sistema agora procura a posição exata do aluno antigo na lista e o substitui pelas novas informações.
+* Na classe de serviço, criei os métodos que faltavam para que a tela pudesse finalmente conversar com o armazenamento e realizar todas as operações do cadastro.
 
-## Como compilar e executar
+---
 
-Pré-requisito: JDK 17 ou superior (`java -version` para verificar).
+## 2. Coleção Exposta
+ 
+* Quando a tela pedia para listar os alunos, o sistema estava entregando a sua lista original de bandeja. O problema disso é que a tela (ou qualquer outra parte do código) conseguia adicionar um "aluno intruso" diretamente nessa lista, pulando todas as nossas regras de validação.
 
-```bash
-# 1. Compilar (a saída vai para a pasta "bin")
-javac -d bin src/siga/*.java
+* Fiz com que o armazenamento passasse a entregar apenas uma **cópia** (um clone) da lista de alunos. Assim, se a tela tentar adicionar ou apagar alguém dessa lista recebida, ela estará mexendo apenas na sua própria cópia, mantendo a nossa lista oficial totalmente segura e protegida.
 
-# 2. Executar
-java -cp bin siga.Main
-```
+---
 
-Execute e observe a saída: ela **demonstra os três deslizes acontecendo**.
+## 3. Exclusão Silenciosa
 
-## O que está incompleto
+* Ao pedir para o sistema excluir uma matrícula que não existia (por exemplo, "0000000"), ele procurava, não achava nada e simplesmente ficava quieto. O usuário na tela recebia uma mensagem de sucesso, achando que a exclusão tinha dado certo, quando na verdade o aluno nem existia. Falhar em silêncio é muito perigoso.
 
-| Local | Situação |
-|---|---|
-| `AlunoDAOMemoria.inserir` | Não impede matrícula duplicada |
-| `AlunoDAOMemoria.atualizar` | Não implementado (lança `UnsupportedOperationException`) |
-| `ServicoAluno` | Faltam `consultar`, `alterar` e `excluir` |
+* Adicionei uma checagem simples antes de excluir. Agora, o sistema tenta buscar o aluno primeiro; se o resultado for vazio, ele dispara um erro claro avisando que a matrícula não existe e que ninguém foi removido.
 
-## Os três deslizes propositais
+---
 
-| # | Deslize | Onde | Por que é um problema |
-|---|---|---|---|
-| 1 | **Coleção interna exposta** | `AlunoDAOMemoria.listarTodos` | Devolve a própria lista interna; a tela consegue inserir um aluno sem passar pelo serviço, quebrando o encapsulamento. |
-| 2 | **Exclusão silenciosa** | `AlunoDAOMemoria.remover` | Não verifica se o registro existia; o usuário recebe confirmação de uma operação que não ocorreu. |
-| 3 | **Validação duplicada e divergente** | `ServicoAluno` e `Main` | A regra da média está nos dois lugares, com limites diferentes (0..10 e 0..100). Regra duplicada diverge com o tempo. |
+## 4. Validação Duplicada
+ 
+* A regra que diz qual é a nota máxima permitida estava escrita em dois lugares diferentes: na tela principal (a classe `Main`) e na classe de serviço. Para piorar, elas estavam diferentes! A tela aceitava notas até 100, mas o serviço só aceitava até 10. Ter a mesma regra em dois lugares gera confusão e, com o tempo, elas sempre acabam divergindo.
 
-## Sua tarefa
-
-Siga as etapas da ficha de atividade prática:
-
-1. **Completar o CRUD** no `AlunoDAOMemoria`: impedir matrícula duplicada em `inserir` e implementar `atualizar`, verificando a existência do registro.
-2. **Implementar a camada de serviço**: `consultar`, `alterar` e `excluir` no `ServicoAluno`, extraindo a validação para um método privado `validar(Aluno)` reutilizado pelas operações.
-3. **Corrigir os três deslizes**: cópia defensiva em `listarTodos`, verificação de existência em `remover` e eliminação da validação duplicada na apresentação (a regra do domínio fica **apenas** no serviço).
-4. **Tratar as exceções** na camada de apresentação, com mensagens claras e específicas — e sem blocos `catch` vazios.
-5. **Consolidar a Etapa 1** no repositório, com README e commits descritivos.
-
-## Critério de sucesso
-
-Ao final: (a) as **quatro operações** do CRUD funcionam; (b) a regra da média existe em **um único lugar**; (c) a tela **não consegue** alterar a coleção interna do DAO; e (d) excluir uma matrícula inexistente produz **mensagem de erro**, não de sucesso.
-
-## Padrão de entrega
-
-Conforme a ficha de atividade prática: identificadores em português, um arquivo `.java` por classe pública, código formatado, entrega no repositório Git com README e commits descritivos. O uso de IA para gerar o código é proibido nesta atividade (ver seção 5.3 da ficha).
-
-> **Etapa 1 do Projeto Integrador:** além desta atividade, a entrega inclui o modelo de domínio, o diagrama de classes, ao menos um padrão criacional justificado e a documentação das decisões de design. Consulte a Seção 10 da apostila da Aula 8.
+* Apaguei totalmente a verificação de notas que ficava na tela. A tela não tem que tomar decisões de negócio. Depois, centralizei todas as regras (de nome em branco e limite de nota) em um único método privado dentro da classe de serviço. Agora, a tela apenas manda os dados e espera o serviço dizer se aprovou ou se deu erro, mantendo as regras do sistema em um único lugar seguro.
